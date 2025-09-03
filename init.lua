@@ -542,6 +542,7 @@ function obj:enter_chooser(windowChooser)
   obj.trackPrevWindow = nil
   obj.trackChooser = windowChooser
   obj.imageCache = {}
+  obj.PrevWindow = nil
 
   windowChooser:show()
 
@@ -557,6 +558,7 @@ function obj:leave_chooser(chooser)
   obj:showImageOverlay()
   obj.trackChooser =nil
   obj.trackPrevWindow = nil
+  obj.PrevWindow = nil
   if obj.overlay then
     obj.overlay:delete()
     obj.overlay = nil
