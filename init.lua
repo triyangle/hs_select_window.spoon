@@ -44,6 +44,7 @@ obj.trackChooser = nil    -- timer callback to track the chooser selection
 obj.trackPrevWindow = nil -- previous window shown in the chooser, so we don't update
                           -- unnecessarily
 obj.imageCache = {}       -- cache images created... since it is the slowest part
+obj.pendingCaptures = {}  -- track pending async captures by window id
 obj.overlay = nil         -- keep track of the snapshop being displayed
 obj.overlayHeightRatio = 0.4 -- ratio of the screen to use for the overlay
 
@@ -610,13 +611,46 @@ function obj:captureWindowSnapshot(window)
   local outputPath = "/tmp/window_snapshot_" .. windowID .. ".png"
 
   -- Use screencapture with the window ID to capture the window
+  -- fallback synchronous capture (kept for compatibility) - prefer async via requestWindowSnapshot
   local command = "screencapture -x -l" .. windowID .. " " .. outputPath
   hs.execute(command)
-
-  -- Load the image from the file into an hs.image object
   local image = hs.image.imageFromPath(outputPath)
-
   return image
+end
+
+
+function obj:requestWindowSnapshot(window)
+  -- Non-blocking snapshot request. If we already have a cached image, return immediately.
+  if not window then return end
+  local wid = window:id()
+  if not wid then return end
+  if obj.imageCache[wid] then return end
+  if obj.pendingCaptures[wid] then return end
+
+  obj.pendingCaptures[wid] = true
+  local outputPath = "/tmp/window_snapshot_" .. wid .. ".png"
+
+  -- use hs.task to run screencapture asynchronously
+  local args = {"-x", "-l" .. tostring(wid), outputPath}
+  local task = hs.task.new("/usr/sbin/screencapture", function(exitCode, stdOut, stdErr)
+    -- clear pending flag
+    obj.pendingCaptures[wid] = nil
+    -- load image if created
+    local image = hs.image.imageFromPath(outputPath)
+    if image then
+      obj.imageCache[wid] = image
+      -- if chooser is visible and selection still matches this window, show overlay
+      if obj.trackChooser and obj.trackChooser:isVisible() then
+        local sel = obj.trackChooser:selectedRowContents()
+        if sel and sel["win"] and sel["win"]:id() == wid then
+          obj:showImageOverlay(image)
+          obj.PrevWindow = wid
+        end
+      end
+    end
+  end, args)
+  -- start the task and detach
+  task:start()
 end
 
 
@@ -669,22 +703,18 @@ function display_currently_selected_window_callback()
     end
 
     local selectedWin = obj.trackChooser:selectedRowContents()["win"]
-
-    -- only update if the window is different than the previous one
-
     if selectedWin then
       local wid = selectedWin:id()
-
       if wid ~= obj.PrevWindow then
-        -- keep a cache of the images
-        -- this cache is regenerated at every invocation
+        -- if we already have a cached image, show it right away
         local wImage = obj.imageCache[wid]
-        if not wImage then
-          wImage = obj:captureWindowSnapshot(selectedWin)
-          obj.imageCache[wid] = wImage
+        if wImage then
+          obj:showImageOverlay(wImage)
+          obj.PrevWindow = wid
+        else
+          -- request an async capture; overlay will be shown when capture completes
+          obj:requestWindowSnapshot(selectedWin)
         end
-        obj:showImageOverlay(wImage)
-        obj.PrevWindow = wid
       end
     end
   end
