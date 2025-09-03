@@ -22,6 +22,9 @@ obj.rowsToDisplay = 14 -- how many rows to display in the chooser
 -- do we show the current selected window on the right corner of the screen?
 obj.showCurrentlySelectedWindow = nil
 
+-- whether to use fuzzy searching for the chooser (default: false)
+obj.useFuzzySearch = false
+
 -- delay for the timer... it only refreshes at this interval
 obj.displayDelay = 0.2
 
@@ -52,6 +55,32 @@ function obj:print_table(t, f)
 --   for i,v in ipairs(t) do
 --      print(i, f(v))
 --   end
+end
+
+
+-- lightweight fuzzy matching function
+-- returns a numeric score (higher is better) or nil if no match
+local function fuzzy_score(haystack, needle)
+  if not needle or needle == "" then return 1 end
+  local s = string.lower(haystack or "")
+  local q = string.lower(needle or "")
+  local pos = 1
+  local first_pos, last_pos
+  for i = 1, #q do
+    local c = q:sub(i,i)
+    local found = s:find(c, pos, true)
+    if not found then
+      return nil
+    end
+    if not first_pos then first_pos = found end
+    last_pos = found
+    pos = found + 1
+  end
+  -- score favors more matched characters and more compact matches
+  local matched = #q
+  local spread = (last_pos or 0) - (first_pos or 0) + 1
+  local score = matched * 100 - spread
+  return score
 end
 
 function obj:hotkeys_enable(enable)
@@ -314,9 +343,46 @@ function obj:selectWindowGeneric(fnListWindows)
      return
    end
 
-   windowChooser:choices(windowChoices)
-   windowChooser:rows(obj.rowsToDisplay)
-   windowChooser:query(nil)
+   -- if fuzzy searching is enabled, override the queryChanged handler
+   if obj.useFuzzySearch then
+     -- keep a copy of original choices and provide a queryChanged handler
+     local originalChoices = windowChoices
+     windowChooser:choices(originalChoices)
+     windowChooser:rows(obj.rowsToDisplay)
+     windowChooser:query(nil)
+    windowChooser:queryChangedCallback(function(query)
+      if not query or query == "" then
+        windowChooser:choices(originalChoices)
+        return
+      end
+      local hits = {}
+      for _,choice in ipairs(originalChoices) do
+        -- score against text and subText (title + app)
+        local score1 = fuzzy_score(choice.text or "", query)
+        local score2 = fuzzy_score(choice.subText or "", query)
+        local score = nil
+        if score1 and score2 then score = math.max(score1, score2)
+        elseif score1 then score = score1
+        elseif score2 then score = score2 end
+        if score then
+          table.insert(hits, {score=score, choice=choice})
+        end
+      end
+      table.sort(hits, function(a,b) return a.score > b.score end)
+      local sorted = {}
+      for i,v in ipairs(hits) do table.insert(sorted, v.choice) end
+      if #sorted == 0 then
+        -- make sure chooser shows nothing if no matches
+        windowChooser:choices({})
+      else
+        windowChooser:choices(sorted)
+      end
+    end)
+   else
+     windowChooser:choices(windowChoices)
+     windowChooser:rows(obj.rowsToDisplay)
+     windowChooser:query(nil)
+   end
 end
 
 function obj:selectWindow(onlyCurrentApp, moveToCurrentSpace)
@@ -427,9 +493,40 @@ function obj:selectApp(moveToCurrentSpace)
    obj:enter_chooser(windowChooser)
    
    local windowChoices = obj:list_window_choices(onlyCurrentApp, currentWin)
-   windowChooser:choices(windowChoices)
-   windowChooser:rows(obj.rowsToDisplay)
-   windowChooser:query(nil)
+   if obj.useFuzzySearch then
+     local originalChoices = windowChoices
+     windowChooser:choices(originalChoices)
+     windowChooser:rows(obj.rowsToDisplay)
+     windowChooser:query(nil)
+     windowChooser:queryChangedCallback(function(query)
+       if not query or query == "" then
+         windowChooser:choices(originalChoices)
+         return
+       end
+       local hits = {}
+       for _,choice in ipairs(originalChoices) do
+         local score1 = fuzzy_score(choice.text or "", query)
+         local score2 = fuzzy_score(choice.subText or "", query)
+         local score = nil
+         if score1 and score2 then score = math.max(score1, score2)
+         elseif score1 then score = score1
+         elseif score2 then score = score2 end
+         if score then table.insert(hits, {score=score, choice=choice}) end
+       end
+       table.sort(hits, function(a,b) return a.score > b.score end)
+       local sorted = {}
+       for i,v in ipairs(hits) do table.insert(sorted, v.choice) end
+       if #sorted == 0 then
+         windowChooser:choices({})
+       else
+         windowChooser:choices(sorted)
+       end
+     end)
+   else
+     windowChooser:choices(windowChoices)
+     windowChooser:rows(obj.rowsToDisplay)
+     windowChooser:query(nil)
+   end
 end
 
 function obj:enter_chooser(windowChooser)
