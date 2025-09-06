@@ -2,7 +2,7 @@
 --- dmg hammerspoon
 ---
 
-local obj = {}
+local obj={}
 obj.__index = obj
 
 -- metadata
@@ -12,7 +12,6 @@ obj.version = "0.3"
 obj.author = "dmg <dmg@turingmachine.org>"
 obj.homepage = "https://github.com/dmgerman/hs_select_window.spoon"
 obj.license = "MIT - https://opensource.org/licenses/MIT"
-obj.chooserScreen = nil
 
 
 -- things to configure
@@ -35,18 +34,18 @@ obj.hotkeys = {}
 obj.modalKeys = hs.hotkey.modal.new()
 
 obj.modalKeys:bind({}, "tab", function()
-  -- toggle it when typing tab
-  obj.showCurrentlySelectedWindow = not obj.showCurrentlySelectedWindow
+    -- toggle it when typing tab
+    obj.showCurrentlySelectedWindow = not obj.showCurrentlySelectedWindow
 end)
 
 
---
-obj.trackChooser = nil       -- timer callback to track the chooser selection
-obj.trackPrevWindow = nil    -- previous window shown in the chooser, so we don't update
--- unnecessarily
-obj.imageCache = {}          -- cache images created... since it is the slowest part
-obj.pendingCaptures = {}     -- track pending async captures by window id
-obj.overlay = nil            -- keep track of the snapshop being displayed
+-- 
+obj.trackChooser = nil    -- timer callback to track the chooser selection
+obj.trackPrevWindow = nil -- previous window shown in the chooser, so we don't update
+                          -- unnecessarily
+obj.imageCache = {}       -- cache images created... since it is the slowest part
+obj.pendingCaptures = {}  -- track pending async captures by window id
+obj.overlay = nil         -- keep track of the snapshop being displayed
 obj.overlayHeightRatio = 0.4 -- ratio of the screen to use for the overlay
 
 
@@ -54,10 +53,11 @@ obj.overlayHeightRatio = 0.4 -- ratio of the screen to use for the overlay
 
 -- for debugging purposes
 function obj:print_table(t, f)
-  --   for i,v in ipairs(t) do
-  --      print(i, f(v))
-  --   end
+--   for i,v in ipairs(t) do
+--      print(i, f(v))
+--   end
 end
+
 
 -- lightweight fuzzy matching function
 -- returns a numeric score (higher is better) or nil if no match
@@ -68,7 +68,7 @@ local function fuzzy_score(haystack, needle)
   local pos = 1
   local first_pos, last_pos
   for i = 1, #q do
-    local c = q:sub(i, i)
+    local c = q:sub(i,i)
     local found = s:find(c, pos, true)
     if not found then
       return nil
@@ -85,7 +85,7 @@ local function fuzzy_score(haystack, needle)
 end
 
 function obj:hotkeys_enable(enable)
-  for _, v in pairs(obj.hotkeys) do
+  for _,v in pairs (obj.hotkeys)do
     if enable then
       v:enable()
     else
@@ -98,70 +98,69 @@ end
 
 function obj:print_windows()
   function w_info(w)
-    return string.format("[%s] [%s] [%s]",
-      w:application():bundleID(),
-      w:application():name(),
-      w:title()
-    )
-  end
-
-  obj:print_table(hs.window.visibleWindows(), w_info)
+     return string.format("[%s] [%s] [%s]",
+       w:application():bundleID(),
+       w:application():name(),
+       w:title()
+     )
+   end
+   obj:print_table(hs.window.visibleWindows(), w_info)
 end
 
 theWindows = hs.window.filter.new()
-theWindows:setDefaultFilter {}
+theWindows:setDefaultFilter{}
 theWindows:setSortOrder(hs.window.filter.sortByFocusedLast)
 obj.currentWindows = {}
-obj.previousSelection = nil -- the idea is that one switches back and forth between two windows all the time
+obj.previousSelection = nil  -- the idea is that one switches back and forth between two windows all the time
 
 
 -- Start by saving all windows
 
-for i, v in ipairs(theWindows:getWindows()) do
-  table.insert(obj.currentWindows, v)
+for i,v in ipairs(theWindows:getWindows()) do
+   table.insert(obj.currentWindows, v)
 end
 
 function obj:find_window_by_title(t)
-  -- find a window by title.
-  for i, v in ipairs(obj.currentWindows) do
-    if string.find(v:title(), t) then
-      return v
-    end
-  end
-  return nil
+   -- find a window by title.
+   for i,v in ipairs(obj.currentWindows) do
+      if string.find(v:title(), t) then
+         return v
+      end
+   end
+   return nil
 end
 
 function obj:focus_by_title(t)
-  -- focus the window with given title
-  if not t then
-    hs.alert.show("No string provided to focus_by_title")
-    return nil
-  end
-  w = obj:find_window_by_title(t)
-  if w then
-    w:focus()
-  end
-  return w
+   -- focus the window with given title
+   if not t then
+      hs.alert.show("No string provided to focus_by_title")
+      return nil
+   end
+   w = obj:find_window_by_title(t)
+   if w then
+      w:focus()
+   end
+   return w
 end
 
 function obj:focus_by_app(appName)
-  -- find a window with that application name and jump to it
-  --   print(' [' .. appName ..']')
-  for i, v in ipairs(obj.currentWindows) do
-    --      print('           [' .. v:application():name() .. ']')
-    if string.find(v:application():name(), appName) then
-      --         print("Focusing window" .. v:title())
-      v:focus()
-      return v
-    end
-  end
-  return nil
+   -- find a window with that application name and jump to it
+--   print(' [' .. appName ..']')
+   for i,v in ipairs(obj.currentWindows) do
+--      print('           [' .. v:application():name() .. ']')
+      if string.find(v:application():name(), appName) then
+--         print("Focusing window" .. v:title())
+         v:focus()
+         return v
+      end
+   end
+   return nil
 end
 
 function obj:focus_by_bundle_id(bundleID)
   -- find a window with that application name and jump to it
   --   print(' [' .. appName ..']')
-  for i, v in ipairs(obj.currentWindows) do
+  for i,v in ipairs(obj.currentWindows) do
     --      print('           [' .. v:application():name() .. ']')
     if string.find(v:application():bundleID(), bundleID) then
       --         print("Focusing window" .. v:title())
@@ -172,11 +171,12 @@ function obj:focus_by_bundle_id(bundleID)
   return nil
 end
 
+
 function obj:focus_by_app_and_title(appName, title)
   -- find a window with that application name and jump to it
   --   print(' [' .. appName ..']')
-  for i, v in ipairs(obj.currentWindows) do
-    --     print('           [' .. v:application():name() .. ']')
+  for i,v in ipairs(obj.currentWindows) do
+--     print('           [' .. v:application():name() .. ']')
     if (v:application():name() == appName) and string.find(v:title(), title) then
       --         print("Focusing window" .. v:title())
       v:focus()
@@ -186,44 +186,46 @@ function obj:focus_by_app_and_title(appName, title)
   return nil
 end
 
+
 -- the hammerspoon tracking of windows seems to be broken
 -- we do it ourselves
 
 local function callback_window_created(w, appName, event)
-  if event == "windowDestroyed" then
-    --      print("deleting from windows-----------------", w)
-    --      if w then
-    --         print("destroying window" .. w:title())
-    --      end
-    for i, v in ipairs(obj.currentWindows) do
-      if v == w then
-        table.remove(obj.currentWindows, i)
-        return
-      end
-    end
-    --      print("Not found .................. ", w)
-    --      obj:print_table0(obj.currentWindows)
-    --      print("Not found ............ :()", w)
-    return
-  end
 
-  if event == "windowCreated" then
-    --      if w then
-    --         print("creating window" .. w:title())
-    --      end
-    --      print("inserting into windows.........", w)
-    table.insert(obj.currentWindows, 1, w)
-    return
-  end
-  if event == "windowFocused" then
-    --otherwise is equivalent to delete and then create
-    --      if w then
-    --         print("Focusing window" .. w:title())
-    --      end
-    callback_window_created(w, appName, "windowDestroyed")
-    callback_window_created(w, appName, "windowCreated")
-    --      obj:print_table0(obj.currentWindows)
-  end
+   if event == "windowDestroyed" then
+--      print("deleting from windows-----------------", w)
+--      if w then
+--         print("destroying window" .. w:title())
+--      end
+      for i,v in ipairs(obj.currentWindows) do
+         if v == w then
+            table.remove(obj.currentWindows, i)
+            return
+         end
+      end
+--      print("Not found .................. ", w)
+--      obj:print_table0(obj.currentWindows)
+--      print("Not found ............ :()", w)
+      return
+   end
+   
+   if event == "windowCreated" then
+--      if w then
+--         print("creating window" .. w:title())
+--      end
+--      print("inserting into windows.........", w)
+      table.insert(obj.currentWindows, 1, w)
+      return
+   end
+   if event == "windowFocused" then
+      --otherwise is equivalent to delete and then create
+--      if w then
+--         print("Focusing window" .. w:title())
+--      end
+      callback_window_created(w, appName, "windowDestroyed")
+      callback_window_created(w, appName, "windowCreated")
+--      obj:print_table0(obj.currentWindows)
+   end
 end
 theWindows:subscribe(hs.window.filter.windowCreated, callback_window_created)
 theWindows:subscribe(hs.window.filter.windowDestroyed, callback_window_created)
@@ -231,146 +233,145 @@ theWindows:subscribe(hs.window.filter.windowFocused, callback_window_created)
 
 
 function obj:count_app_windows(currentApp)
-  local count = 0
-  for i, w in ipairs(obj.currentWindows) do
-    local app = w:application()
-    if (app == currentApp) then
-      count = count + 1
-    end
-  end
-  return count
+   local count = 0
+   for i,w in ipairs(obj.currentWindows) do
+      local app = w:application()
+      if  (app == currentApp) then
+          count = count + 1
+      end
+   end
+   return count
 end
 
+
 function obj:list_window_choices(onlyCurrentApp, currentWin)
-  local windowChoices = {}
-  local currentApp = currentWin:application()
-  --  print("\nstarting to populate")
-  --   print(currentApp)
-  for i, w in ipairs(obj.currentWindows) do
-    if w ~= currentWin then
-      local app     = w:application()
-      local appName = '(none)'
-      if app then
-        appName = app:name()
-        -- add bundle id, to separate windows with same name, but different
-        -- bundleID
-        appBundleId = app:bundleID()
+   local windowChoices = {}
+   local currentApp = currentWin:application()
+--  print("\nstarting to populate")
+--   print(currentApp)
+   for i,w in ipairs(obj.currentWindows) do
+      if w ~= currentWin then
+         local app = w:application()
+         local appName  = '(none)'
+         if app then
+           appName = app:name()
+           -- add bundle id, to separate windows with same name, but different
+           -- bundleID
+            appBundleId = app:bundleID()
+               end
+         if (not onlyCurrentApp) or (app == currentApp) then
+--            print("inserting...")
+           local windowImage= nil
+           local appImage = hs.image.imageFromAppBundle(w:application():bundleID())
+            table.insert(windowChoices, {
+                            text = w:title() .. "--" .. appName,
+                            subText = appBundleId,
+                            uuid = i,
+                            image = appImage,
+                            wImage = nil, -- populated by display_currently_selected_window_callback
+                            win=w})
+         end
       end
-      if (not onlyCurrentApp) or (app == currentApp) then
-        --            print("inserting...")
-        local windowImage = nil
-        local appImage = hs.image.imageFromAppBundle(w:application():bundleID())
-        table.insert(windowChoices, {
-          text = w:title() .. "--" .. appName,
-          subText = appBundleId,
-          uuid = i,
-          image = appImage,
-          wImage = nil, -- populated by display_currently_selected_window_callback
-          win = w
-        })
-      end
-    end
-  end
-  return windowChoices;
+   end
+   return windowChoices;
 end
+
+
 
 function obj:windowActivate(w)
   if w then
     w:focus()
-    -- this fixes a bug when the application is a different screen
+    -- this fixes a bug when the application is a different screen 
     w:application():activate()
   else
     hs.alert.show("unable fo focus " .. name)
   end
-end
+
+end  
 
 function obj:selectWindowGeneric(fnListWindows)
-  local windowChooser = hs.chooser.new(function(choice)
-    obj:leave_chooser()
+   local windowChooser = hs.chooser.new(function(choice)
+       obj:leave_chooser()
 
-    if not choice then
+       if not choice then
+         return
+       end
+       local v = choice["win"]
+       if v then
+--         hs.alert.show("doing something, we have a v")
+--         print(v)
+         if moveToCurrentSpace then
+           hs.alert.show("move to current")
+           -- we don't want to keep the window maximized
+           -- move to the current space... so we leave that space alone
+           if v:isFullScreen() then
+             v:toggleFullScreen()
+           end
+           hs.spaces.moveWindowToSpace(v,
+                hs.spaces.activeSpaceOnScreen(hs.screen.mainScreen())
+           )
+           v:moveToScreen(mainScreen)
+         end
+         v:focus()
+         v:application():activate()
+       else
+         hs.alert.show("unable fo focus " .. name)
+       end
+   end)
+
+   if #obj.currentWindows == 0 then
+      hs.alert.show("no other window available ")
       return
-    end
-    local v = choice["win"]
-    if v then
-      --         hs.alert.show("doing something, we have a v")
-      --         print(v)
-      if moveToCurrentSpace then
-        hs.alert.show("move to current")
-        -- we don't want to keep the window maximized
-        -- move to the current space... so we leave that space alone
-        if v:isFullScreen() then
-          v:toggleFullScreen()
-        end
-        hs.spaces.moveWindowToSpace(v,
-          hs.spaces.activeSpaceOnScreen(hs.screen.mainScreen())
-        )
-        v:moveToScreen(mainScreen)
-      end
-      v:focus()
-      v:application():activate()
-    else
-      hs.alert.show("unable fo focus " .. name)
-    end
-  end)
-
-  if #obj.currentWindows == 0 then
-    hs.alert.show("no other window available ")
-    return
-  end
-  -- show it, so we start catching keyboard events
-  obj:enter_chooser(windowChooser)
+   end
+   -- show it, so we start catching keyboard events
+   obj:enter_chooser(windowChooser)
 
 
-  -- then fill fill it and let it do its thing
-  local windowChoices = fnListWindows()
-  if #windowChoices == 0 then
-    hs.alert.show("There are no other windows to select.")
-    windowChooser:hide()
-    return
-  end
-  if #windowChoices == 1 then
-    local v = windowChoices[1]["win"]
-    print("activating 2:", hs.inspect(windowChoices))
-    print("activating  :", hs.inspect(v))
-    windowChooser:hide()
-    v:focus()
-    v:application():activate()
-    return
-  end
+   -- then fill fill it and let it do its thing
+   local windowChoices = fnListWindows()
+   if #windowChoices == 0 then
+     hs.alert.show("There are no other windows to select.")
+     windowChooser:hide()
+     return
+   end
+   if #windowChoices == 1 then
+     local v = windowChoices[1]["win"]
+     print("activating 2:", hs.inspect(windowChoices))
+     print("activating  :", hs.inspect(v))
+     windowChooser:hide()
+     v:focus()
+     v:application():activate()
+     return
+   end
 
-  -- if fuzzy searching is enabled, override the queryChanged handler
-  if obj.useFuzzySearch then
-    -- keep a copy of original choices and provide a queryChanged handler
-    local originalChoices = windowChoices
-    windowChooser:choices(originalChoices)
-    windowChooser:rows(obj.rowsToDisplay)
-    windowChooser:query(nil)
+   -- if fuzzy searching is enabled, override the queryChanged handler
+   if obj.useFuzzySearch then
+     -- keep a copy of original choices and provide a queryChanged handler
+     local originalChoices = windowChoices
+     windowChooser:choices(originalChoices)
+     windowChooser:rows(obj.rowsToDisplay)
+     windowChooser:query(nil)
     windowChooser:queryChangedCallback(function(query)
       if not query or query == "" then
         windowChooser:choices(originalChoices)
         return
       end
       local hits = {}
-      for _, choice in ipairs(originalChoices) do
+      for _,choice in ipairs(originalChoices) do
         -- score against text and subText (title + app)
         local score1 = fuzzy_score(choice.text or "", query)
         local score2 = fuzzy_score(choice.subText or "", query)
         local score = nil
-        if score1 and score2 then
-          score = math.max(score1, score2)
-        elseif score1 then
-          score = score1
-        elseif score2 then
-          score = score2
-        end
+        if score1 and score2 then score = math.max(score1, score2)
+        elseif score1 then score = score1
+        elseif score2 then score = score2 end
         if score then
-          table.insert(hits, { score = score, choice = choice })
+          table.insert(hits, {score=score, choice=choice})
         end
       end
-      table.sort(hits, function(a, b) return a.score > b.score end)
+      table.sort(hits, function(a,b) return a.score > b.score end)
       local sorted = {}
-      for i, v in ipairs(hits) do table.insert(sorted, v.choice) end
+      for i,v in ipairs(hits) do table.insert(sorted, v.choice) end
       if #sorted == 0 then
         -- make sure chooser shows nothing if no matches
         windowChooser:choices({})
@@ -378,11 +379,11 @@ function obj:selectWindowGeneric(fnListWindows)
         windowChooser:choices(sorted)
       end
     end)
-  else
-    windowChooser:choices(windowChoices)
-    windowChooser:rows(obj.rowsToDisplay)
-    windowChooser:query(nil)
-  end
+   else
+     windowChooser:choices(windowChoices)
+     windowChooser:rows(obj.rowsToDisplay)
+     windowChooser:query(nil)
+   end
 end
 
 function obj:selectWindow(onlyCurrentApp, moveToCurrentSpace)
@@ -398,7 +399,7 @@ function obj:selectWindow(onlyCurrentApp, moveToCurrentSpace)
   end
 
   obj:selectWindowGeneric(
-    function() return obj:list_window_choices(onlyCurrentApp, currentWin) end
+    function () return obj:list_window_choices(onlyCurrentApp, currentWin) end
   )
 end
 
@@ -410,12 +411,12 @@ function obj:selectFirstAppWindow()
   function list_window_first_choices()
     local windowChoices = {}
     local seen = {}
-    for i, w in ipairs(obj.currentWindows) do
+    for i,w in ipairs(obj.currentWindows) do
       local app = w:application()
       local appName = (app and app:name()) or '(none)'
       local bundleID = (app and app:bundleID()) or appnName
       local appImage = nil
-      if bundleID and bundleID ~= currentBundleID and (not seen[bundleID]) then
+      if bundleID and  bundleID ~= currentBundleID and (not seen[bundleID]) then
         seen[bundleID] = w
 
         if (not onlyCurrentApp) or (app == currentApp) then
@@ -426,13 +427,12 @@ function obj:selectFirstAppWindow()
             appImage = hs.image.imageFromAppBundle(bundleID)
           end
           table.insert(windowChoices, {
-            text = w:title() .. "--" .. appName,
-            subText = bundleID,
-            uuid = i,
-            image = appImage,
-            wImage = nil,
-            win = w
-          })
+              text = w:title() .. "--" .. appName,
+              subText = bundleID,
+              uuid = i,
+              image = appImage,
+              wImage = nil,
+              win=w})
         end
       end
     end
@@ -442,102 +442,100 @@ function obj:selectFirstAppWindow()
   obj:selectWindowGeneric(list_window_first_choices)
 end
 
+
+
 function obj:selectApp(moveToCurrentSpace)
-  -- show only first window of a given application
+   -- show only first window of a given application
 
-  local currentWin = hs.window.focusedWindow()
+   local currentWin = hs.window.focusedWindow()
 
-  local windowChooser = hs.chooser.new(function(choice)
-    obj:leave_chooser()
-    if not choice then
-      hs.alert.show("Nothing to focus");
+   local windowChooser = hs.chooser.new(function(choice)
+       obj:leave_chooser()
+       if not choice then
+         hs.alert.show("Nothing to focus");
+         return
+       end
+       local v = choice["win"]
+       if v then
+--         hs.alert.show("doing something, we have a v")
+--         print(v)
+         if moveToCurrentSpace then
+           hs.alert.show("move to current")
+           -- we don't want to keep the window maximized
+           -- move to the current space... so we leave that space alone
+           if v:isFullScreen() then
+             v:toggleFullScreen()
+           end
+           hs.spaces.moveWindowToSpace(v,
+                hs.spaces.activeSpaceOnScreen(hs.screen.mainScreen())
+           )
+           v:moveToScreen(mainScreen)
+         end
+         v:focus()
+         v:application():activate()
+       else
+         hs.alert.show("unable fo focus " .. name)
+       end
+   end)
+
+   -- check if we have other windows
+   if onlyCurrentApp then
+      local nWindows = obj:count_app_windows(currentWin:application())
+      if nWindows == 0 then
+         hs.alert.show("no other window for this application ")
+         return
+      end
+   end
+   if #obj.currentWindows == 0 then
+      hs.alert.show("no other window available ")
       return
-    end
-    local v = choice["win"]
-    if v then
-      --         hs.alert.show("doing something, we have a v")
-      --         print(v)
-      if moveToCurrentSpace then
-        hs.alert.show("move to current")
-        -- we don't want to keep the window maximized
-        -- move to the current space... so we leave that space alone
-        if v:isFullScreen() then
-          v:toggleFullScreen()
-        end
-        hs.spaces.moveWindowToSpace(v,
-          hs.spaces.activeSpaceOnScreen(hs.screen.mainScreen())
-        )
-        v:moveToScreen(mainScreen)
-      end
-      v:focus()
-      v:application():activate()
-    else
-      hs.alert.show("unable fo focus " .. name)
-    end
-  end)
+   end
 
-  -- check if we have other windows
-  if onlyCurrentApp then
-    local nWindows = obj:count_app_windows(currentWin:application())
-    if nWindows == 0 then
-      hs.alert.show("no other window for this application ")
-      return
-    end
-  end
-  if #obj.currentWindows == 0 then
-    hs.alert.show("no other window available ")
-    return
-  end
-
-  obj:enter_chooser(windowChooser)
-
-  local windowChoices = obj:list_window_choices(onlyCurrentApp, currentWin)
-  if obj.useFuzzySearch then
-    local originalChoices = windowChoices
-    windowChooser:choices(originalChoices)
-    windowChooser:rows(obj.rowsToDisplay)
-    windowChooser:query(nil)
-    windowChooser:queryChangedCallback(function(query)
-      if not query or query == "" then
-        windowChooser:choices(originalChoices)
-        return
-      end
-      local hits = {}
-      for _, choice in ipairs(originalChoices) do
-        local score1 = fuzzy_score(choice.text or "", query)
-        local score2 = fuzzy_score(choice.subText or "", query)
-        local score = nil
-        if score1 and score2 then
-          score = math.max(score1, score2)
-        elseif score1 then
-          score = score1
-        elseif score2 then
-          score = score2
-        end
-        if score then table.insert(hits, { score = score, choice = choice }) end
-      end
-      table.sort(hits, function(a, b) return a.score > b.score end)
-      local sorted = {}
-      for i, v in ipairs(hits) do table.insert(sorted, v.choice) end
-      if #sorted == 0 then
-        windowChooser:choices({})
-      else
-        windowChooser:choices(sorted)
-      end
-    end)
-  else
-    windowChooser:choices(windowChoices)
-    windowChooser:rows(obj.rowsToDisplay)
-    windowChooser:query(nil)
-  end
+   obj:enter_chooser(windowChooser)
+   
+   local windowChoices = obj:list_window_choices(onlyCurrentApp, currentWin)
+   if obj.useFuzzySearch then
+     local originalChoices = windowChoices
+     windowChooser:choices(originalChoices)
+     windowChooser:rows(obj.rowsToDisplay)
+     windowChooser:query(nil)
+     windowChooser:queryChangedCallback(function(query)
+       if not query or query == "" then
+         windowChooser:choices(originalChoices)
+         return
+       end
+       local hits = {}
+       for _,choice in ipairs(originalChoices) do
+         local score1 = fuzzy_score(choice.text or "", query)
+         local score2 = fuzzy_score(choice.subText or "", query)
+         local score = nil
+         if score1 and score2 then score = math.max(score1, score2)
+         elseif score1 then score = score1
+         elseif score2 then score = score2 end
+         if score then table.insert(hits, {score=score, choice=choice}) end
+       end
+       table.sort(hits, function(a,b) return a.score > b.score end)
+       local sorted = {}
+       for i,v in ipairs(hits) do table.insert(sorted, v.choice) end
+       if #sorted == 0 then
+         windowChooser:choices({})
+       else
+         windowChooser:choices(sorted)
+       end
+     end)
+   else
+     windowChooser:choices(windowChoices)
+     windowChooser:rows(obj.rowsToDisplay)
+     windowChooser:query(nil)
+   end
 end
 
 function obj:enter_chooser(windowChooser)
-  -- show the chooser
+  -- show the chooser 
   -- and enable/disable whatever is necessary when in the
   -- chooser
 
-  --  theWindows:pause()
+--  theWindows:pause()
   obj:hotkeys_enable(false)
   obj.pollChooser:start()
 
@@ -546,26 +544,20 @@ function obj:enter_chooser(windowChooser)
   obj.imageCache = {}
   obj.PrevWindow = nil
 
-  -- place chooser on the screen under the mouse (roughly centered)
-  local scr = hs.mouse.getCurrentScreen() or hs.screen.mainScreen()
-  obj.chooserScreen = scr -- <-- store the screen we opened on
-  local f = scr:frame()
-  local topLeft = { x = math.floor(f.x + f.w * 0.30), y = math.floor(f.y + f.h * 0.18) }
-  windowChooser:show(topLeft)
-
-
+  windowChooser:show()
 
   obj.modalKeys:enter()
+
+
 end
 
 function obj:leave_chooser(chooser)
   -- exiting the chooser
-  -- and enable/disable whatever is necessary when
+  -- and enable/disable whatever is necessary when 
   -- the chooser returns
   obj:showImageOverlay()
-  obj.trackChooser = nil
+  obj.trackChooser =nil
   obj.trackPrevWindow = nil
-  obj.chooserScreen = nil
   obj.PrevWindow = nil
   if obj.overlay then
     obj.overlay:delete()
@@ -576,13 +568,15 @@ function obj:leave_chooser(chooser)
 
   obj.modalKeys:exit()
 
-  --  theWindows:resume()
+--  theWindows:resume()
 
   obj:hotkeys_enable(true)
+
 end
 
+
 function obj:previousWindow()
-  return obj.currentWindows[2]
+   return obj.currentWindows[2]
 end
 
 -- simple function to be able to go back to the previous window
@@ -594,11 +588,11 @@ end
 
 function obj:nextFullScreen()
   -- find a window by title.
-  for i, v in ipairs(obj.currentWindows) do
+  for i,v in ipairs(obj.currentWindows) do
     if v:isFullScreen() then
       if (obj.currentWindows[1] == v) then
-        --        print("it is the currentn window")
-        -- do nothing
+         --        print("it is the currentn window")
+         -- do nothing
       else
         v:focus()
         return
@@ -626,6 +620,7 @@ function obj:captureWindowSnapshot(window)
   return image
 end
 
+
 function obj:requestWindowSnapshot(window)
   -- Non-blocking snapshot request. If we already have a cached image, return immediately.
   if not window then return end
@@ -638,7 +633,7 @@ function obj:requestWindowSnapshot(window)
   local outputPath = "/tmp/window_snapshot_" .. wid .. ".png"
 
   -- use hs.task to run screencapture asynchronously
-  local args = { "-x", "-l" .. tostring(wid), outputPath }
+  local args = {"-x", "-l" .. tostring(wid), outputPath}
   local task = hs.task.new("/usr/sbin/screencapture", function(exitCode, stdOut, stdErr)
     -- clear pending flag
     obj.pendingCaptures[wid] = nil
@@ -650,7 +645,7 @@ function obj:requestWindowSnapshot(window)
       if obj.trackChooser and obj.trackChooser:isVisible() then
         local sel = obj.trackChooser:selectedRowContents()
         if sel and sel["win"] and sel["win"]:id() == wid then
-          obj:showImageOverlay(image, obj.chooserScreen)
+          obj:showImageOverlay(image)
           obj.PrevWindow = wid
         end
       end
@@ -660,17 +655,20 @@ function obj:requestWindowSnapshot(window)
   task:start()
 end
 
-function obj:showImageOverlay(image, scr)
+
+function obj:showImageOverlay(image)
+  -- show the image overlay in the bottom right of the screen
   if obj.overlay then
-    obj.overlay:delete(); obj.overlay = nil
+    obj.overlay:delete()
+    obj.overlay = nil
   end
-  if not image then return end
+  if not image then
+    return
+  end
+  -- Get screen dimensions (main screen in this case)
+  local screenFrame = hs.screen.mainScreen():frame()
 
-  local screenObj = scr or obj.chooserScreen or hs.screen.mainScreen()
-  local screenFrame = screenObj:frame()
-
-
-  -- if necessary, resize image to fit a reasonable overlay area
+  -- if necessary, resize image to fit a reasonable overlay area 
   local origSize = image:size()
   local h = screenFrame.h * obj.overlayHeightRatio
   local newSize = nil
@@ -697,7 +695,9 @@ end
 -- call back to display the snapshot of the currently
 -- active window
 function display_currently_selected_window_callback()
+  
   if obj.trackChooser and obj.trackChooser:isVisible() then
+    
     if not obj.showCurrentlySelectedWindow then
       -- user might have disabled it
       obj:showImageOverlay() -- clean any window that is currently being shown
@@ -711,7 +711,7 @@ function display_currently_selected_window_callback()
         -- if we already have a cached image, show it right away
         local wImage = obj.imageCache[wid]
         if wImage then
-          obj:showImageOverlay(wImage, obj.chooserScreen)
+          obj:showImageOverlay(wImage)
           obj.PrevWindow = wid
         else
           -- request an async capture; overlay will be shown when capture completes
@@ -724,29 +724,33 @@ end
 
 -- only enable showing the thumbnails when desired
 -- it could be a bit slow and will take some memory
-obj.pollChooser = hs.timer.doEvery(obj.displayDelay, display_currently_selected_window_callback)
+obj.pollChooser = hs.timer.doEvery(obj.displayDelay,display_currently_selected_window_callback)
 obj.pollChooser:stop()
 
 function obj:bindHotkeys(mapping)
   local def = {
-    all_windows                           = function() self:selectWindow(false, false) end,
-    all_windows_move_to_current_workspace = function() self:selectWindow(false, true) end,
-    app_windows                           = function() self:selectWindow(true, false) end,
-    first_window_per_app                  = function() self:selectFirstAppWindow() end
+    all_windows                   = function() self:selectWindow(false,false) end,
+    all_windows_move_to_current_workspace = function() self:selectWindow(false,true) end,
+    app_windows                   = function() self:selectWindow(true, false) end,
+    first_window_per_app          = function() self:selectFirstAppWindow() end
   }
   -- do it by hand, so we can keep track of the hotkeys
-  for i, v in pairs(mapping) do
+  for i,v in pairs (mapping)do
     obj.hotkeys[i] = hs.hotkey.bind(v[1], v[2], def[i])
     obj.modalKeys:bind(v[1], v[2], function()
-      hs.eventtap.keyStroke({ "ctrl" }, "n")
+        hs.eventtap.keyStroke({"ctrl"}, "n")
     end)
-    -- I am just going to assume that nobody is going to use shift to call the function
+-- I am just going to assume that nobody is going to use shift to call the function
     local ks = v[1]
-    ks[#ks + 1] = "shift"
+    ks[#ks+1] = "shift"
     obj.modalKeys:bind(ks, v[2], function()
-      hs.eventtap.keyStroke({ "ctrl" }, "p")
+        hs.eventtap.keyStroke({"ctrl"}, "p")
     end)
   end
+
 end
 
+
+
 return obj
+
